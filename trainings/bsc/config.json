@@ -1,0 +1,13 @@
+﻿{
+    "id":  "bsc",
+    "slug":  "bsc",
+    "trainingName":  "Don\u0027t take the bait — Avoid Financial Impact of Phishing #ABI",
+    "dashboardTab":  "bsc",
+    "defaultSourceFile":  "BSC.xlsx",
+    "label":  "BSC",
+    "folders":  {
+                    "input":  "input",
+                    "processed":  "processed",
+                    "output":  "output"
+                }
+}

@@ -1,0 +1,13 @@
+﻿{
+    "id":  "growth",
+    "slug":  "growth_group",
+    "trainingName":  "Mandatory Anti-Phishing Training — Growth Group #ABI",
+    "dashboardTab":  "growth",
+    "defaultSourceFile":  null,
+    "label":  "Growth Group",
+    "folders":  {
+                    "input":  "input",
+                    "processed":  "processed",
+                    "output":  "output"
+                }
+}

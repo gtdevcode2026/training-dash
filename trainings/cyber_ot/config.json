@@ -1,0 +1,13 @@
+﻿{
+    "id":  "cyberOT",
+    "slug":  "cyber_ot",
+    "trainingName":  "Cyber OT Training #ABI",
+    "dashboardTab":  "cyberOT",
+    "defaultSourceFile":  "CyberOT.xlsx",
+    "label":  "Cyber OT",
+    "folders":  {
+                    "input":  "input",
+                    "processed":  "processed",
+                    "output":  "output"
+                }
+}

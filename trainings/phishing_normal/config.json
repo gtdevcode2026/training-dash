@@ -1,0 +1,13 @@
+﻿{
+    "id":  "phishingNormal",
+    "slug":  "phishing_normal",
+    "trainingName":  "Security \u0026 Compliance Awareness : Phishing #ABI",
+    "dashboardTab":  "phishingNormal",
+    "defaultSourceFile":  "Phished.xlsx",
+    "label":  "Phishing Normal Users",
+    "folders":  {
+                    "input":  "input",
+                    "processed":  "processed",
+                    "output":  "output"
+                }
+}

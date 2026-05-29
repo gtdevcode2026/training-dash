@@ -1,0 +1,13 @@
+﻿{
+    "id":  "appSec",
+    "slug":  "application_security",
+    "trainingName":  "Introduction to Application Security #ABI",
+    "dashboardTab":  "appSec",
+    "defaultSourceFile":  null,
+    "label":  "Application Security",
+    "folders":  {
+                    "input":  "input",
+                    "processed":  "processed",
+                    "output":  "output"
+                }
+}

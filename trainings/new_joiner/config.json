@@ -1,0 +1,13 @@
+﻿{
+    "id":  "newJoiner",
+    "slug":  "new_joiner",
+    "trainingName":  "IT Security Awareness - English #ABI",
+    "dashboardTab":  "newJoiner",
+    "defaultSourceFile":  "Datamart.xlsx",
+    "label":  "New Joiner",
+    "folders":  {
+                    "input":  "input",
+                    "processed":  "processed",
+                    "output":  "output"
+                }
+}

@@ -1,0 +1,13 @@
+﻿{
+    "id":  "band4",
+    "slug":  "band4_senior_management",
+    "trainingName":  "Security \u0026 Compliance Awareness Training (Sr. Management) #ABI",
+    "dashboardTab":  "band4",
+    "defaultSourceFile":  "DirPhished.xlsx",
+    "label":  "Band 4+ Senior Management",
+    "folders":  {
+                    "input":  "input",
+                    "processed":  "processed",
+                    "output":  "output"
+                }
+}
