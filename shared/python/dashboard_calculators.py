@@ -14,7 +14,8 @@ from typing import Any, Callable, Optional
 import pandas as pd
 
 from excel_io import load_tool_excel, load_userbase_excel
-from training_processor import _find_column, _norm_id, _norm_key, map_macro_zone, map_transcript_status
+from pathlib import Path
+from training_processor import _find_column, _norm_id, _norm_key, _strip_columns, map_macro_zone, map_transcript_status
 
 BSC_APPEND = [
     "start date_extracted",
@@ -82,7 +83,9 @@ def _parse_calendar_year(raw) -> Optional[int]:
 
 
 def _fmt_date_iso(val: object) -> str:
-    """Date → YYYY-MM-DD (ISO), matching TrainingDir_Automation.py output format."""
+    """Date → YYYY-MM-DD (ISO).
+    Mirrors standalone: pd.to_datetime(..., errors='coerce') → strftime or '' on NaT.
+    """
     if val is None or (isinstance(val, float) and pd.isna(val)):
         return ""
     if isinstance(val, pd.Timestamp):
@@ -99,18 +102,15 @@ def _fmt_date_iso(val: object) -> str:
             return f"{int(n)}-01-01"
         if 25000 < n < 60000:
             ts = pd.to_datetime(n, unit="D", origin="1899-12-30", errors="coerce")
-            if not pd.isna(ts) and 1990 <= int(ts.year) <= 2036:
+            if not pd.isna(ts):
                 return ts.strftime("%Y-%m-%d")
+        return ""
     s = str(val).strip()
     if not s:
         return ""
-    if re.fullmatch(r"20\d{2}", s):
-        return f"{s}-01-01"
     ts = pd.to_datetime(s, errors="coerce", dayfirst=True)
     if pd.isna(ts):
-        return s
-    if int(ts.year) < 1990:
-        return s
+        return ""
     return ts.strftime("%Y-%m-%d")
 
 
@@ -888,22 +888,50 @@ def _enrich_phishing_band4_tracking(
     return out, metrics
 
 
+def _load_base_unfiltered(base_path) -> pd.DataFrame:
+    """Load userbase exactly as the standalone does — full file, no terminated filtering.
+    Terminated status is determined from the tool export, not the base file.
+    """
+    path = Path(base_path).resolve()
+    scan_rows = 35
+    raw = pd.read_excel(path, header=None, nrows=scan_rows, engine="openpyxl")
+
+    def _looks_like_header(values) -> bool:
+        has_email = has_id = False
+        for v in values:
+            if pd.isna(v):
+                continue
+            t = str(v).strip().lower()
+            if "email" in t:
+                has_email = True
+            if re.search(r"employee\s*id|emp\s*id|local\s*employee|global\s*employee", t):
+                has_id = True
+        return has_email and has_id
+
+    header_row = 0
+    for i in range(len(raw)):
+        if _looks_like_header(raw.iloc[i].values):
+            header_row = i
+            break
+    return _strip_columns(pd.read_excel(path, header=header_row, engine="openpyxl"))
+
+
 def calculate_phishing_normal(base_path, tool_path, assign_date: str = "") -> tuple[pd.DataFrame, dict]:
-    base_df = load_userbase_excel(base_path)
+    base_df = _load_base_unfiltered(base_path)
     tool_df = load_tool_excel(tool_path)
     out, metrics = _enrich_phishing_band4_tracking(base_df, tool_df)
     return out, metrics
 
 
 def calculate_band4(base_path, tool_path, assign_date: str = "") -> tuple[pd.DataFrame, dict]:
-    base_df = load_userbase_excel(base_path)
+    base_df = _load_base_unfiltered(base_path)
     tool_df = load_tool_excel(tool_path)
     out, metrics = _enrich_phishing_band4_tracking(base_df, tool_df)
     return out, metrics
 
 
 def calculate_bsc(base_path, tool_path, assign_date: str = "") -> tuple[pd.DataFrame, dict]:
-    base_df = load_userbase_excel(base_path)
+    base_df = _load_base_unfiltered(base_path)
     tool_df = load_tool_excel(tool_path)
     out, metrics = _enrich_phishing_band4_tracking(base_df, tool_df)
     return out, metrics
