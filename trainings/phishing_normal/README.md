@@ -1,4 +1,4 @@
-﻿# Phishing Normal Users
+# Phishing Normal Users
 
 Dashboard section ID: `phishingNormal`  
 LMS training name: Security & Compliance Awareness : Phishing #ABI
@@ -16,6 +16,22 @@ LMS training name: Security & Compliance Awareness : Phishing #ABI
 ## Browser dashboard
 
 Open `../../dashboard/index.html` and use the **Phishing Normal Users** tab.
+
+**Calculate** enriches the uploaded **Phishing Tracking Input** as-is (no extra BSC/Band4 filtering in code). The **userbase is the master list** (absolute Total). Match tool file by **Employee Email**, **Global Employee ID**, and **Local Employee ID** (any hit counts). Appended columns after the last filled userbase header:
+
+- `Training Start Date`
+- `Training completion date`
+- `training completion status`
+
+| Metric | Meaning |
+|--------|---------|
+| **Total (userbase)** | Unique users in uploaded userbase (deduped by email → global ID → local ID) |
+| **Completed** | Found in tool and completed |
+| **Not completed** | Found in tool but not completed |
+| **Not found** | In userbase but not in tool |
+
+**Download Updated Userbase** — full userbase with original columns + appended fields (single sheet).  
+**Download Pending Users** — uploaded userbase rows that are not completed.
 
 ## CLI (Python)
 

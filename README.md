@@ -1,75 +1,75 @@
 # ABInBev Training Status Automation
 
-Professional layout: one folder per training module, shared libraries, and a single browser dashboard.
+Simple **HTML dashboard** (browser-only) + **Python CLI** with **SQLite** run history.
 
 ## Project structure
 
 ```
 training_status_new/
-├── README.md
-├── requirements.txt
-├── dashboard/
-│   └── index.html          # Open in a browser (main UI)
+├── dashboard/index.html       # Main UI — open directly in Chrome/Edge
+├── dash2.html                 # Shortcut → dashboard
+├── docs/TRAINING_CALCULATION_STEPS.md   # Exact steps per training
+├── tool/run_calculation.py    # Python CLI
+├── data/training_status.db    # Created on first CLI run (SQLite)
 ├── shared/
-│   ├── python/             # training_processor.py, completion_state.py
-│   └── javascript/         # Dashboard logic (config, Excel utils, processors, UI)
-└── trainings/
-    ├── application_security/
-    ├── cyber_ot/
-    ├── growth_group/
-    ├── new_joiner/
-    ├── bsc/
-    ├── phishing_normal/
-    └── band4_senior_management/
+│   ├── javascript/app.js      # In-browser calculations
+│   └── python/                # Calculators, SQLite, legacy CLI helpers
+└── trainings/<module>/        # input/, output/, scripts/ per training
 ```
 
-Each training folder contains:
+## Quick start — HTML (no server)
 
-| Path | Purpose |
-|------|---------|
-| `config.json` | Module metadata (dashboard tab id, LMS name, default filenames) |
-| `README.md` | How to run this training |
-| `scripts/` | Python CLI for that training (where applicable) |
-| `input/` | Drop Datamart + LMS exports before CLI runs |
-| `output/` | Dated Excel results |
-| `processed/` | Dated copies of inputs used per run |
-| `samples/` | Optional reference workbooks |
+1. Open **`dashboard/index.html`** in Chrome or Edge (double-click the file).
+2. Upload Excel files on each tab and click **Calculate**.
+3. Download the updated userbase or tool output Excel.
 
-## Quick start (dashboard)
+No localhost, no Flask, no install required for the dashboard.
 
-1. Open `dashboard/index.html` in Chrome or Edge.
-2. Use the tabs for each training; upload tool/base Excel files as described on each panel.
-3. Click **Calculate** or **Process All Sections**.
+**Calculation details:** see [docs/TRAINING_CALCULATION_STEPS.md](docs/TRAINING_CALCULATION_STEPS.md).
 
-## Quick start (Python CLI)
+## Quick start — Python + SQLite
 
 ```powershell
 cd c:\Users\manka\Downloads\training_status_new
 pip install -r requirements.txt
+python tool/run_calculation.py --list
 ```
 
-Example for Cyber OT:
+Example (BSC):
 
 ```powershell
-cd trainings\cyber_ot\scripts
-# Copy CyberOT.xlsx and Datamart.xlsx into ..\input\
-python process_cyberot.py "..\input\CyberOT.xlsx"
+python tool/run_calculation.py bsc `
+  --base trainings\bsc\input\userbase.xlsx `
+  --tool trainings\bsc\input\BSC.xlsx `
+  --assign-date 2026-05-29
 ```
 
-Outputs go under `trainings/cyber_ot/output/` and snapshots under `trainings/cyber_ot/processed/YYYY-MM-DD/`.
+- Output: `trainings/bsc/output/bsc_Updated_Userbase_YYYY-MM-DD.xlsx`
+- Run logged in `data/training_status.db` (`calculation_runs` table)
+- History: `python tool/run_calculation.py --history`
 
 ## Training index
 
-| Folder | Dashboard tab | CLI script |
-|--------|---------------|------------|
-| `application_security` | App Security | Dashboard only |
-| `cyber_ot` | Cyber OT | `process_cyberot.py` |
-| `growth_group` | Growth Group | Dashboard only |
-| `new_joiner` | New Joiner | `assign_newjoiners_training.py` |
-| `bsc` | BSC | `process_bsc.py` |
-| `phishing_normal` | Phishing Normal | `process_phished.py` |
-| `band4_senior_management` | Band 4+ | `process_dirphished.py` |
+| Folder | Dashboard tab | Needs userbase? | CLI |
+|--------|---------------|-----------------|-----|
+| `application_security` | App Security | No | `run_calculation.py app_sec --tool …` |
+| `cyber_ot` | Cyber OT | No | `run_calculation.py cyber_ot --tool …` |
+| `growth_group` | Growth Group | No | `run_calculation.py growth --tool …` |
+| `new_joiner` | New Joiner | No | Dashboard or `assign_newjoiners_training.py` |
+| `bsc` | BSC | Yes | `run_calculation.py bsc --base … --tool …` |
+| `phishing_normal` | Phishing Normal | Yes | `run_calculation.py phishing_normal --base … --tool …` |
+| `band4_senior_management` | Band 4+ | Yes | `run_calculation.py band4 --base … --tool …` |
 
-## Legacy note
+## SQLite
 
-The previous single-file dashboard was `dash2.html` at the repo root. It is replaced by `dashboard/index.html` plus `shared/javascript/`. You can delete `dash2.html` after verifying the new layout.
+| Table | Purpose |
+|-------|---------|
+| `calculation_runs` | CLI run history (counts, paths, timestamps) |
+| `completion_records` | Legacy completion-date backfill (existing Python exports) |
+
+Database path: **`data/training_status.db`**
+
+## Optional legacy server
+
+`server/upload_server.py` and `scripts/start_server.ps1` are **not required**. They only saved uploads to disk when the dashboard was served over HTTP.
+add 

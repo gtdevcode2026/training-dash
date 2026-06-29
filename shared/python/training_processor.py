@@ -30,13 +30,45 @@ from completion_state import persist_completion_records, resolve_completion_date
 # Zone fallback: values in "Macro Entity Level 2 (Zone)" -> normalized zone code
 MACRO_ZONE_MAP = {
     "GLOBAL": "Global Core",
+    "GLOBAL CORE": "Global Core",
+    "ZONE GLOBAL": "Global Core",
     "ZONE MIDDLE AMERICAS": "MAZ",
+    "MIDDLE AMERICAS": "MAZ",
+    "MIDDLE AMERICA": "MAZ",
+    "ZONE MIDDLE AMERICA": "MAZ",
+    "ZONE MAZ": "MAZ",
+    "MAZ": "MAZ",
     "ZONE EUROPE": "EUR",
+    "EUROPE": "EUR",
+    "ZONE EUR": "EUR",
+    "EUR": "EUR",
     "ZONE ASIA PACIFIC": "APAC",
+    "ASIA PACIFIC": "APAC",
+    "ZONE APAC": "APAC",
+    "APAC": "APAC",
     "ZONE AFRICA": "AFR",
+    "AFRICA": "AFR",
+    "ZONE AFR": "AFR",
+    "AFR": "AFR",
     "ZONE SOUTH AMERICA": "SAZ",
+    "SOUTH AMERICA": "SAZ",
+    "ZONE SAZ": "SAZ",
+    "SAZ": "SAZ",
     "ZONE NORTH AMERICA": "NAZ",
+    "NORTH AMERICA": "NAZ",
+    "ZONE NAZ": "NAZ",
+    "NAZ": "NAZ",
 }
+
+ZONE_PATTERN_RULES: list[tuple[re.Pattern[str], str]] = [
+    (re.compile(r"MIDDLE\s*AMERICAS?|^ZONE\s*MAZ$|^MAZ$", re.I), "MAZ"),
+    (re.compile(r"^(ZONE\s*)?EUROPE$|^EUR$", re.I), "EUR"),
+    (re.compile(r"^(ZONE\s*)?ASIA\s*PACIFIC$|^APAC$", re.I), "APAC"),
+    (re.compile(r"^(ZONE\s*)?AFRICA$|^AFR$", re.I), "AFR"),
+    (re.compile(r"^(ZONE\s*)?SOUTH\s*AMERICA$|^SAZ$", re.I), "SAZ"),
+    (re.compile(r"^(ZONE\s*)?NORTH\s*AMERICA$|^NAZ$", re.I), "NAZ"),
+    (re.compile(r"^(ZONE\s*)?GLOBAL(\s*CORE)?$|^GLOBAL$", re.I), "Global Core"),
+]
 
 # Expected Transcript Status labels from the source. Other stray LMS values are handled in
 # map_transcript_status before this lookup.
@@ -187,9 +219,16 @@ def map_transcript_status(raw) -> str:
 
 
 def map_macro_zone(raw) -> str:
-    k = _norm_key(raw).upper()
-    k = re.sub(r"\s+", " ", k).strip()
-    return MACRO_ZONE_MAP.get(k, "")
+    s = str(raw or "").strip()
+    if not s:
+        return ""
+    k = re.sub(r"\s+", " ", _norm_key(s).upper()).strip()
+    if k in MACRO_ZONE_MAP:
+        return MACRO_ZONE_MAP[k]
+    for pat, code in ZONE_PATTERN_RULES:
+        if pat.search(k):
+            return code
+    return s
 
 
 def _stem_normalized(name: str) -> str:

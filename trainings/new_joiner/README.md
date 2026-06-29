@@ -1,4 +1,4 @@
-﻿# New Joiner
+# New Joiner
 
 Dashboard section ID: `newJoiner`  
 LMS training name: IT Security Awareness - English #ABI
@@ -16,6 +16,8 @@ LMS training name: IT Security Awareness - English #ABI
 ## Browser dashboard
 
 Open `../../dashboard/index.html` and use the **New Joiner** tab.
+
+**Year tabs (2024 / 2025 / 2026)** use **`Original Hire Date`** only (normalized to dd/mm/yyyy). Rows outside 2024–2026 are excluded. Terminated employees (`Employee Status = Terminated`) are removed at parse.
 
 ## CLI (Python)
 

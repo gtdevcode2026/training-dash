@@ -1,4 +1,4 @@
-﻿# Growth Group
+# Growth Group
 
 Dashboard section ID: `growth`  
 LMS training name: Mandatory Anti-Phishing Training — Growth Group #ABI
@@ -16,6 +16,8 @@ LMS training name: Mandatory Anti-Phishing Training — Growth Group #ABI
 ## Browser dashboard
 
 Open `../../dashboard/index.html` and use the **Growth Group** tab.
+
+**Filter:** Only users with **Macro entity level three BU Description** = `GLOBAL GROWTH` are included when you click Calculate (other BU values are excluded).
 
 ## CLI (Python)
 

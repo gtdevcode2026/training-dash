@@ -1,4 +1,4 @@
-﻿# BSC
+# BSC
 
 Dashboard section ID: `bsc`  
 LMS training name: Don't take the bait — Avoid Financial Impact of Phishing #ABI
@@ -16,6 +16,14 @@ LMS training name: Don't take the bait — Avoid Financial Impact of Phishing #A
 ## Browser dashboard
 
 Open `../../dashboard/index.html` and use the **BSC** tab.
+
+**Calculate** walks every **userbase** row, matches the tool file by **Emp ID** and **email**, and appends (after the last filled userbase column):
+
+- `start date_extracted` — BSC annual/phishing logic (original start date columns are left unchanged)
+- `Training completion date`
+- `training completion status`
+
+**Download Updated Userbase** exports the full userbase with all original columns plus appended fields (single sheet). **Download Pending Users** exports rows that are not completed.
 
 ## CLI (Python)
 

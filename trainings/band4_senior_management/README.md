@@ -1,4 +1,4 @@
-﻿# Band 4+ Senior Management
+# Band 4+ Senior Management
 
 Dashboard section ID: `band4`  
 LMS training name: Security & Compliance Awareness Training (Sr. Management) #ABI
@@ -16,6 +16,21 @@ LMS training name: Security & Compliance Awareness Training (Sr. Management) #AB
 ## Browser dashboard
 
 Open `../../dashboard/index.html` and use the **Band 4+ Senior Management** tab.
+
+**Calculate** enriches the uploaded **Phishing Tracking Input** userbase as-is (no extra Band 4 filter in code). The **userbase is the master list** (absolute Total). Each user is matched to the tool file by **Employee Email**, **Global Employee ID**, and **Local Employee ID** (any hit counts). Appended columns (after the last filled userbase header):
+
+- `Training Start Date`
+- `Training completion date`
+- `training completion status` — Completed, Not completed (in tool), or Not found (not in tool)
+
+| Metric | Meaning |
+|--------|---------|
+| **Total (userbase)** | Unique users in uploaded userbase (deduped by email → global ID → local ID) |
+| **Completed** | Found in tool and completed |
+| **Not completed** | Found in tool but not completed |
+| **Not found** | In userbase but not in tool |
+
+**Download Updated Userbase** exports the full workbook with all original columns plus appended fields (single sheet). **Download Pending Users** exports uploaded rows that are not completed.
 
 ## CLI (Python)
 
