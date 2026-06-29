@@ -936,6 +936,29 @@ def _load_base_phishing_standalone(path) -> pd.DataFrame:
     return df
 
 
+def _load_tool_phishing_standalone(path) -> pd.DataFrame:
+    """Load tool export with auto header detection + dtype=str + fillna('').
+    Standalone uses header=21 hardcoded; we scan up to 120 rows for correctness,
+    then load with dtype=str and fillna('') to match standalone exactly.
+    """
+    path = Path(path).resolve()
+    raw = pd.read_excel(path, header=None, nrows=120, engine="openpyxl")
+    header_row = 0
+    for i in range(len(raw)):
+        row_vals = [str(v).strip().lower() for v in raw.iloc[i].values if not pd.isna(v)]
+        if (
+            any("employee id" in v for v in row_vals)
+            and any("transcript status" in v for v in row_vals)
+            and any("work email" in v for v in row_vals)
+        ):
+            header_row = i
+            break
+    df = pd.read_excel(path, header=header_row, dtype=str, engine="openpyxl")
+    df = df.fillna("")
+    df.columns = df.columns.str.strip()
+    return df
+
+
 def _enrich_phishing_standalone(
     base_df: pd.DataFrame,
     tool_df: pd.DataFrame,
@@ -1022,13 +1045,13 @@ def _enrich_phishing_standalone(
 
 def calculate_phishing_normal(base_path, tool_path, assign_date: str = "") -> tuple[pd.DataFrame, dict]:
     base_df = _load_base_phishing_standalone(base_path)
-    tool_df = load_tool_excel(tool_path)
+    tool_df = _load_tool_phishing_standalone(tool_path)
     return _enrich_phishing_standalone(base_df, tool_df)
 
 
 def calculate_band4(base_path, tool_path, assign_date: str = "") -> tuple[pd.DataFrame, dict]:
     base_df = _load_base_phishing_standalone(base_path)
-    tool_df = load_tool_excel(tool_path)
+    tool_df = _load_tool_phishing_standalone(tool_path)
     return _enrich_phishing_standalone(base_df, tool_df)
 
 
