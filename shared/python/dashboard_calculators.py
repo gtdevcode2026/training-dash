@@ -81,6 +81,39 @@ def _parse_calendar_year(raw) -> Optional[int]:
     return int(ts.year)
 
 
+def _fmt_date_iso(val: object) -> str:
+    """Date → YYYY-MM-DD (ISO), matching TrainingDir_Automation.py output format."""
+    if val is None or (isinstance(val, float) and pd.isna(val)):
+        return ""
+    if isinstance(val, pd.Timestamp):
+        if pd.isna(val):
+            return ""
+        return val.strftime("%Y-%m-%d")
+    if isinstance(val, datetime):
+        return val.strftime("%Y-%m-%d")
+    if isinstance(val, date):
+        return val.strftime("%Y-%m-%d")
+    if isinstance(val, (int, float)):
+        n = float(val)
+        if n == int(n) and 1990 <= int(n) <= 2036:
+            return f"{int(n)}-01-01"
+        if 25000 < n < 60000:
+            ts = pd.to_datetime(n, unit="D", origin="1899-12-30", errors="coerce")
+            if not pd.isna(ts) and 1990 <= int(ts.year) <= 2036:
+                return ts.strftime("%Y-%m-%d")
+    s = str(val).strip()
+    if not s:
+        return ""
+    if re.fullmatch(r"20\d{2}", s):
+        return f"{s}-01-01"
+    ts = pd.to_datetime(s, errors="coerce", dayfirst=True)
+    if pd.isna(ts):
+        return s
+    if int(ts.year) < 1990:
+        return s
+    return ts.strftime("%Y-%m-%d")
+
+
 def _fmt_date(val: object) -> str:
     """Training Start Date, Completed Date, assignment date → dd/mm/yyyy."""
     if val is None or (isinstance(val, float) and pd.isna(val)):
@@ -808,7 +841,7 @@ def _enrich_phishing_band4_tracking(
         if e:
             rec = email_lookup.get(e)
         if rec is None:
-            for key in (mv.get("global_id"), mv.get("local_id"), mv.get("emp_id")):
+            for key in (mv.get("global_id"), mv.get("local_id")):
                 if not key:
                     continue
                 rec = id_lookup.get(_norm_id(key))
@@ -828,8 +861,8 @@ def _enrich_phishing_band4_tracking(
             matched += 1
         else:
             raw_status = str(rec.get(cols["status"]) or "").strip() if cols["status"] else ""
-            start_date = _fmt_date(rec.get(cols["start"])) if cols["start"] else ""
-            comp_date = _fmt_date(rec.get(cols["complete"])) if cols["complete"] else ""
+            start_date = _fmt_date_iso(rec.get(cols["start"])) if cols["start"] else ""
+            comp_date = _fmt_date_iso(rec.get(cols["complete"])) if cols["complete"] else ""
             enriched["Transcript Status"] = raw_status
             enriched["Training Start Date"] = start_date
             enriched["Transcript Completed Date"] = comp_date
