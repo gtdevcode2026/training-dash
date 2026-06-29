@@ -872,50 +872,7 @@ def calculate_band4(base_path, tool_path, assign_date: str = "") -> tuple[pd.Dat
 def calculate_bsc(base_path, tool_path, assign_date: str = "") -> tuple[pd.DataFrame, dict]:
     base_df = load_userbase_excel(base_path)
     tool_df = load_tool_excel(tool_path)
-    id_col, email_col = _resolve_base_id_email(base_df)
-    cols = _tool_cols(tool_df)
-    zone_col = _find_col(base_df, ["Zone", "Macro Entity Level 2 (Zone)"], r"^zone$", r"macro.?entity.?level.?2")
-
-    headers = _append_columns(list(base_df.columns.astype(str)), BSC_APPEND)
-    enriched_rows: list[dict] = []
-    stats_rows: list[dict] = []
-    matched = 0
-
-    for _, base_row in base_df.iterrows():
-        row_dict = {str(k): base_row[k] for k in base_df.columns}
-        base_email = str(row_dict.get(email_col) or "").strip() if email_col else ""
-        base_id = str(row_dict.get(id_col) or "").strip() if id_col else ""
-        match_key = _norm(base_email) or _norm_id(base_id)
-
-        enriched = {h: "" for h in headers}
-        enriched.update(row_dict)
-
-        if match_key:
-            tool_rows = _tool_rows_for_user(tool_df, cols, base_email, base_id)
-            training = _resolve_bsc_training(tool_rows, cols, assign_date)
-            enriched["start date_extracted"] = training["start_date_extracted"]
-            enriched["Training completion date"] = training["completed_date"]
-            enriched["training completion status"] = training["status"]
-
-        enriched_rows.append(enriched)
-        stats_rows.append(enriched)
-        if _norm(str(enriched.get("training completion status") or "")) != "not found":
-            matched += 1
-
-    out = pd.DataFrame(enriched_rows, columns=headers)
-    status_col = "training completion status"
-    completed = sum(1 for r in stats_rows if _norm(r.get(status_col)) == "completed")
-    not_found = sum(1 for r in stats_rows if _norm(r.get(status_col)) == "not found")
-    terminated = sum(1 for r in stats_rows if _norm(r.get(status_col)) == "terminated")
-    metrics = {
-        "total": len(stats_rows),
-        "completed": completed,
-        "pending": len(stats_rows) - completed,
-        "not_found": not_found,
-        "terminated": terminated,
-        "matched": matched,
-        "userbase_rows": len(base_df),
-    }
+    out, metrics = _enrich_phishing_band4_tracking(base_df, tool_df)
     return out, metrics
 
 
