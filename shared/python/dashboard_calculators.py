@@ -916,18 +916,120 @@ def _load_base_unfiltered(base_path) -> pd.DataFrame:
     return _strip_columns(pd.read_excel(path, header=header_row, engine="openpyxl"))
 
 
-def calculate_phishing_normal(base_path, tool_path, assign_date: str = "") -> tuple[pd.DataFrame, dict]:
-    base_df = _load_base_unfiltered(base_path)
-    tool_df = load_tool_excel(tool_path)
-    out, metrics = _enrich_phishing_band4_tracking(base_df, tool_df)
+# ---------------------------------------------------------------------------
+# Standalone-exact port: TrainingPhisheduser_Automation (1).py
+# ---------------------------------------------------------------------------
+
+def _sn_email(v) -> str:
+    return str(v).strip().lower()
+
+
+def _sn_id(v) -> str:
+    return str(v).strip().replace(".0", "").replace(" ", "")
+
+
+def _load_base_phishing_standalone(path) -> pd.DataFrame:
+    """pd.read_excel(dtype=str).fillna('') — exactly as the standalone script."""
+    df = pd.read_excel(Path(path).resolve(), dtype=str, engine="openpyxl")
+    df = df.fillna("")
+    df.columns = df.columns.str.strip()
+    return df
+
+
+def _enrich_phishing_standalone(
+    base_df: pd.DataFrame,
+    tool_df: pd.DataFrame,
+) -> tuple[pd.DataFrame, dict]:
+    """Direct port of TrainingPhisheduser_Automation (1).py (file dialogs replaced with params)."""
+    _START = "Training Start Date"
+
+    tool_work = tool_df.copy()
+    if _START in tool_work.columns:
+        tool_work[_START] = pd.to_datetime(tool_work[_START], errors="coerce")
+        tool_work = tool_work.sort_values(_START, ascending=False)
+
+    email_lookup: dict[str, dict] = {}
+    id_lookup: dict[str, dict] = {}
+    for _, r in tool_work.iterrows():
+        e = _sn_email(r.get("Work Email Address", ""))
+        i = _sn_id(r.get("Employee ID", ""))
+        if e and e not in email_lookup:
+            email_lookup[e] = r.to_dict()
+        if i and i not in id_lookup:
+            id_lookup[i] = r.to_dict()
+
+    has_lid = "Local Employee ID" in base_df.columns
+    headers = _append_columns(list(base_df.columns.astype(str)), PHISHING_APPEND)
+    enriched_rows: list[dict] = []
+    completed = not_completed = not_found = terminated = matched = 0
+
+    for _, u in base_df.iterrows():
+        row_dict = {str(k): u[k] for k in base_df.columns}
+        enriched = {h: "" for h in headers}
+        enriched.update(row_dict)
+
+        rec: Optional[dict] = None
+        e = _sn_email(u.get("Employee Email", ""))
+        gid = _sn_id(u.get("Global Employee ID", ""))
+        lid = _sn_id(u.get("Local Employee ID", "")) if has_lid else ""
+
+        if e in email_lookup:
+            rec = email_lookup[e]
+        elif gid in id_lookup:
+            rec = id_lookup[gid]
+        elif lid and lid in id_lookup:
+            rec = id_lookup[lid]
+
+        if rec is None:
+            txt = NOT_FOUND_TEXT
+            enriched["Transcript Status"] = txt
+            enriched[_START] = txt
+            enriched["Transcript Completed Date"] = txt
+            not_found += 1
+        elif str(rec.get("Employee Status", "")).strip().lower() == "terminated":
+            enriched["Transcript Status"] = "Terminated"
+            enriched[_START] = "Terminated"
+            enriched["Transcript Completed Date"] = "Terminated"
+            terminated += 1
+            matched += 1
+        else:
+            enriched["Transcript Status"] = str(rec.get("Transcript Status", ""))
+            sd = rec.get(_START)  # already pd.Timestamp from sort step
+            cd = pd.to_datetime(rec.get("Transcript Completed Date", ""), errors="coerce")
+            enriched[_START] = "" if pd.isna(sd) else pd.Timestamp(sd).strftime("%Y-%m-%d")
+            enriched["Transcript Completed Date"] = "" if pd.isna(cd) else cd.strftime("%Y-%m-%d")
+            if str(rec.get("Transcript Status", "")).strip().lower() == "completed":
+                completed += 1
+            else:
+                not_completed += 1
+            matched += 1
+
+        enriched_rows.append(enriched)
+
+    out = pd.DataFrame(enriched_rows, columns=headers)
+    metrics = {
+        "total": len(enriched_rows),
+        "completed": completed,
+        "pending": not_completed + not_found,
+        "not_completed": not_completed,
+        "not_found": not_found,
+        "terminated": terminated,
+        "matched": matched,
+        "userbase_rows": len(base_df),
+    }
     return out, metrics
+
+
+def calculate_phishing_normal(base_path, tool_path, assign_date: str = "") -> tuple[pd.DataFrame, dict]:
+    base_df = _load_base_phishing_standalone(base_path)
+    tool_df = load_tool_excel(tool_path)
+    return _enrich_phishing_standalone(base_df, tool_df)
 
 
 def calculate_band4(base_path, tool_path, assign_date: str = "") -> tuple[pd.DataFrame, dict]:
-    base_df = _load_base_unfiltered(base_path)
+    base_df = _load_base_phishing_standalone(base_path)
     tool_df = load_tool_excel(tool_path)
-    out, metrics = _enrich_phishing_band4_tracking(base_df, tool_df)
-    return out, metrics
+    return _enrich_phishing_standalone(base_df, tool_df)
 
 
 def calculate_bsc(base_path, tool_path, assign_date: str = "") -> tuple[pd.DataFrame, dict]:
